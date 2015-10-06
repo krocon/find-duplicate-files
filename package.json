@@ -1,0 +1,40 @@
+{
+  "name": "find-duplicate-files",
+  "version": "0.0.4",
+  "description": "Find duplicate files (recursive) in a given directory",
+  "keywords": [
+    "find",
+    "walk",
+    "tree",
+    "files",
+    "recursive",
+    "md5",
+    "checksum",
+    "dublicate",
+    "clean"
+  ],
+  "author": {
+    "name": "Marc Kronberg",
+    "email": "krocon@gmail.com",
+    "url": "www.krocon.de"
+  },
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "!test"
+  ],
+  "dependencies": {
+    "walkdir": "^0.0.10",
+    "md5-file": "^2.0.3",
+    "npmlog": "^1.2.1"
+  },
+  "devDependencies": {
+    "es6-promise": "^3.0.2"
+  },
+  "readmeFilename": "README.md",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/krocon/find-duplicate-files.git"
+  }
+}
