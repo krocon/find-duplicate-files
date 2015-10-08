@@ -13,12 +13,7 @@ The md5 calculation can take a long time via network and big data sets (5 hours 
 ## Usage
 ```js
 var fdf = require('find-duplicate-files');
- 
-// callback hander <function> -------------------------+  
-// options <Object> ----+                              |
-// path <String> -+     |                              |
-//                v     v                              v
-      fdf('c:\data\', {checkPattern:/\.cbz$|\.cbr$/g}, function(err,grps){});
+fdf(path <String>, options <Object>, callback hander <function(err,groups)>);
 ```
  
  
@@ -52,9 +47,9 @@ findDuplicateFiles(
     function(err, groups) {
     if (err) return console.error(err);
         groups.forEach(function(group) {
-        // A group is a set of files with the same md5 checksum:
-        group.forEach(function(item) {
-            // a file item has a path and a md5 property:
+            // A group is a set of files with the same md5 checksum:
+            group.forEach(function(item) {
+                // a file item has a path and a md5 property:
                 console.log(item.md5 + '\t' + item.path);
             }
         }
@@ -123,11 +118,11 @@ Auto delete callback handler (madness mode):
 function(err, groups) {
     if (err) return console.error(err);
     groups.forEach(function(group) {
-        // loop starts at index 1
-        // first item will be untouched
-        for (var i = 1; i < group.length; i++) {
-            fs.unlinkSync(group[i].path);
-        }
+         // loop starts at index 1
+         // first item will be untouched
+         for (var i = 1; i < group.length; i++) {
+             fs.unlinkSync(group[i].path);
+         }
     }); // forEach
 }); 
 ```
