@@ -1,7 +1,7 @@
 {
   "name": "find-duplicate-files",
-  "version": "0.0.4",
-  "description": "Find duplicate files (recursive) in a given directory",
+  "version": "0.0.5",
+  "description": "Find duplicate files (recursive) in given directories",
   "keywords": [
     "find",
     "walk",

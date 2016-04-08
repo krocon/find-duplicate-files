@@ -1,7 +1,7 @@
 
 # find-duplicate-files
  
-A file walk util that allows you to find duplicates in a given sub directory (tree). The file walk is recursive.
+A file walk util that allows you to find duplicates in given sub directories (tree). The file walk is recursive.
 Duplicate means that the content of two or more files is equals (checked via md5 check sum).
  
 The directory and all sub directories will be scanned. A given file pattern will reduce the list of scanned files.
@@ -15,6 +15,11 @@ The md5 calculation can take a long time via network and big data sets (5 hours 
 var fdf = require('find-duplicate-files');
 fdf(path <String>, options <Object>, callback hander <function(err,groups)>);
 ```
+
+```js
+var fdf = require('find-duplicate-files');
+fdf(pathes [<String>, ...], options <Object>, callback hander <function(err,groups)>);
+```
  
  
 ### Options
@@ -23,7 +28,7 @@ Key    | Possible values       | Comment
 ------ | ----------------------|---------------------
 silent | true / false (default) | true will skip logging (except errors)
 checkPattern | A regular expression for file names (/\.jpg$/g). Can be null. | null means: all files
-md5File | Specifies a text file for md5 / file name mapping. Can be null. Default: 'md5.json'| null means: 'md5.json' in the given  directory ('path'). You can set a different name (relative or absolute path)
+md5File | Specifies a text file for md5 / file name mapping. Can be null. Default: 'md5.json'| null means: 'md5.json' in the first given directory ('path'). You can set a different name (relative or absolute path)
 md5SkipSaving | true / false (default) | true means: no md5 file shall  be saved.
 md5SkipLoading | true / false (default) | true means: no md5 file shall  be used (if exists).
  
@@ -57,7 +62,10 @@ findDuplicateFiles(
  
 // Sample config for (small) text files:
 findDuplicateFiles(
-     '/Volumes/data/dev/abc',
+     [
+        '/Volumes/data/dev/abc',
+        '/Volumes/movies/ger'
+     ]
      {
          checkPattern: /\.html$|\.js$|\.txt$/g,
          md5SkipSaving: true, // No md5 mapping file will be written
@@ -75,8 +83,8 @@ findDuplicateFiles(
 Debug only:
 ```js
 function(err, groups) {
-     if (err) return console.error(err);
-     console.log(JSON.stringify(groups, null, 4));
+  if (err) return console.error(err);
+  console.log(JSON.stringify(groups, null, 4));
 }); 
 ```
  

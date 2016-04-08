@@ -12,15 +12,28 @@
         var md5File = require("md5-file");
         var log = require('npmlog');
 
-        if (!dir) return log.error('fdf', 'dir is missing');
+        if (!dir) return log.error('fdf', 'Parameter dir is missing');
+
+        var isArray = Array.isArray || function( obj ) {
+                return toString.call(obj) === "[object Array]";
+            };
+        var isString = function( obj ) {
+            return toString.call(obj) === "[object String]";
+        };
+
         if (!options) options = {};
-        options.baseDir = dir;
+        options.pathes = isArray(dir) ? dir : [dir]; // options.pathes is an array!
         options.callback = callback;
+
+        // Check:
+        for (var i; i < options.pathes.length; i++) {
+            if (!isString(options.pathes[i])) return log.error('fdf', 'Parameter dir must be a string or an array of strings.');
+        }
 
 
         (function (opt) {
 
-            function defaultCallback(err, groups) {
+            var defaultCallback = function defaultCallback(err, groups) {
                 if (err) {
                     log.error("fdf", err);
                 } else {
@@ -31,18 +44,27 @@
                         });
                     });
                 }
-            }
+            };
 
-            function containsFileItemByPath(list, path) {
+            var containsFileItemByPath = function containsFileItemByPath(list, path) {
                 for (var i = 0; i < list.length; i++) {
                     if (list[i].path === path) return true;
                 }
                 return false;
-            }
+            };
 
-            function getFiles(dir) {
-                // return walk.sync(dir);
-
+            var getAllFiles = function getAllFiles(pathes) {
+                var files = [];
+                for (var i = 0; i < pathes.length; i++) {
+                    var ff = getFiles(pathes[i]);
+                    for (var j = 0; j < ff.length; j++) {
+                        // We dont want to have duplicates in our file array:
+                        if (files.indexOf(ff[j]) === -1) files.push(ff[j]);
+                    }
+                }
+                return files;
+            };
+            var getFiles = function getFiles(dir) {
                 // We want get files only (no directories):
                 var files = [];
                 try {
@@ -57,9 +79,9 @@
                     if (filesObject.hasOwnProperty(file) && filesObject[file]["mode"] & 0x8000) files.push(file);
                 }
                 return files;
-            }
+            };
 
-            function loadMd5File() {
+            var loadMd5File = function loadMd5File() {
                 var ret = [];
                 if (!opt.md5SkipLoading) {
                     try {
@@ -70,18 +92,18 @@
                     }
                 }
                 return ret;
-            }
+            };
 
-            function saveMd5File() {
+            var saveMd5File = function saveMd5File(md5List) {
                 if (!opt.md5SkipSaving) {
                     fs.writeFile(opt.md5File, JSON.stringify(md5List) /*, null, 2)*/, function (err) {
                         if (err) return console.error(err);
                         if (!opt.silent) log.info('fdf', 'JSON (md5) saved at : %s', opt.md5File);
                     });
                 }
-            }
+            };
 
-            function removeOutdatedMd5Entries(files, md5List) {
+            var removeOutdatedMd5Entries = function removeOutdatedMd5Entries(files, md5List) {
                 // remove outdated entries from md5List:
                 if (md5List.length) {
                     for (var i = 0; i < md5List.length; i++) {
@@ -90,13 +112,13 @@
                         }
                     }
                 }
-            }
+            };
 
-            function createMissingMd5(files, md5List) {
+            var createMissingMd5 = function createMissingMd5(files, md5List) {
                 for (var i = 0; i < files.length; i++) {
                     // Logging:
                     if (!opt.silent && !opt.silent && i > 0 && i % 1000 === 0) {
-                        var dt = (new Date().getTime() - t2);
+                        var dt = (Date.now() - t2);
                         var eta = Math.max(0, (dt * files.length / i - dt) / 1000).toFixed(0);
                         log.info('fdf', '%s %% (%d files) in %d millis (ETA: %s secs).', (100 * i / files.length).toFixed(1), i, dt, eta);
                     }
@@ -113,9 +135,9 @@
                         }
                     }
                 } // for
-            }
+            };
 
-            function findDuplicates(md5List) {
+            var findDuplicates= function findDuplicates(md5List) {
                 var dublicatMd5s = [];
                 var fileCount = 0;
                 var ret = [];
@@ -140,45 +162,51 @@
                 }
                 if (!opt.silent) log.info('fdf', 'Dublicates          : %d files in %d groups.', fileCount, ret.length);
                 return ret;
-            }
+            };
 
 
-            // Starting...
-            if (!opt.md5File) opt.md5File = path.join(opt.baseDir, '/', 'md5.json');
-            opt.callback = opt.callback ? opt.callback : defaultCallback;
+            var start = function start() {
+                // Starting...
 
-            if (!opt.silent) {
-                log.info('fdf', 'Starting at   : %s', opt.baseDir);
-                log.info('fdf', 'Searching for : %s', opt.checkPattern);
-            }
+                if (!opt.md5File) opt.md5File = path.join(opt.pathes[0], '/', 'md5.json');
+                opt.callback = opt.callback ? opt.callback : defaultCallback;
 
-            // Scan directory recursive:
-            var t1 = new Date().getTime();
-            var files = getFiles(opt.baseDir);
-            var t2 = new Date().getTime();
-            if (!opt.silent) log.info('fdf', 'Directory scan: %d entries in %d millis', files.length, (t2 - t1));
+                if (!opt.silent) {
+                    log.info('fdf', 'Starting at   : %s', opt.pathes);
+                    log.info('fdf', 'Searching for : %s', opt.checkPattern);
+                    log.info('fdf', 'Start dirs    : %s', opt.pathes);
+                }
 
-            // Load md5 file or create empty array:
-            var md5List = loadMd5File();
+                // Scan directories recursive:
+                var t1 = Date.now();
+                var files = getAllFiles(opt.pathes);
+                var t2 = Date.now();
+                if (!opt.silent) log.info('fdf', 'Directory scan: %d entries (in %d start directories) in %d millis', files.length, opt.pathes.length, (t2 - t1));
 
-            // remove outdated entries from md5List:
-            removeOutdatedMd5Entries(files, md5List);
+                // Load md5 file or create empty array:
+                var md5List = loadMd5File();
 
-            // get md5 for each file in array 'files':
-            createMissingMd5(files, md5List);
-            var t3 = new Date().getTime();
+                // remove outdated entries from md5List:
+                if (md5List.length) removeOutdatedMd5Entries(files, md5List);
 
-            // Logging:
-            if (!opt.silent) log.info('fdf', 'Creation of md5 list: %d entries in %d millis', md5List.length, (t3 - t2));
+                // get md5 for each file in array 'files':
+                createMissingMd5(files, md5List);
 
-            // Write file/md5 list to file:
-            saveMd5File();
+                var t3 = Date.now();
+                // Logging:
+                if (!opt.silent) log.info('fdf', 'Creation of md5 list: %d entries in %d millis', md5List.length, (t3 - t2));
 
-            // find duplicates by md5:
-            var ret = findDuplicates(md5List);
+                // Write file/md5 list to file:
+                saveMd5File(md5List);
 
-            // call the caller:
-            opt.callback(null, ret);
+                // find duplicates by md5:
+                var ret = findDuplicates(md5List);
+
+                // call the caller:
+                opt.callback(null, ret);
+            };
+
+            start();
 
         })(options);
 
