@@ -115,6 +115,7 @@
             };
 
             var createMissingMd5 = function createMissingMd5(files, md5List) {
+                var t2 = Date.now();
                 for (var i = 0; i < files.length; i++) {
                     // Logging:
                     if (!opt.silent && !opt.silent && i > 0 && i % 1000 === 0) {
