@@ -1,6 +1,4 @@
-
 (function () {
-
     "use strict";
 
     module.exports = function (dir, options, callback) {
@@ -14,10 +12,10 @@
 
         if (!dir) return log.error('fdf', 'Parameter dir is missing');
 
-        var isArray = Array.isArray || function( obj ) {
-                return toString.call(obj) === "[object Array]";
-            };
-        var isString = function( obj ) {
+        var isArray = Array.isArray || function (obj) {
+            return toString.call(obj) === "[object Array]";
+        };
+        var isString = function (obj) {
             return toString.call(obj) === "[object String]";
         };
 
@@ -138,7 +136,7 @@
                 } // for
             };
 
-            var findDuplicates= function findDuplicates(md5List) {
+            var findDuplicates = function findDuplicates(md5List) {
                 var dublicatMd5s = [];
                 var fileCount = 0;
                 var ret = [];
