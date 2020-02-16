@@ -11,22 +11,14 @@ function isString(o) {
   return typeof o === 'string';
 }
 
-function info(...args) {
-  log.info(...args);
-}
-
-function error(...args) {
-  log.error(...args);
-}
-
 function defaultCallback(err, groups) {
   if (err) {
-    error("fdf", err);
+    log.error("fdf", err);
   } else {
     groups.forEach(group => {
-      info("fdf", '');
+      log.info("fdf", '');
       group.forEach(item => {
-        info("fdf", item.path);
+        log.info("fdf", item.path);
       });
     });
   }
@@ -64,7 +56,7 @@ function getFiles(dir) {
       if (filesObject.hasOwnProperty(file) && filesObject[file]["mode"] & 0x8000) files.push(file);
     }
   } catch (e) {
-    error('fdf', 'Error reading %s', dir, e);
+    log.error('fdf', 'Error reading %s', dir, e);
   }
   return files;
 }
@@ -74,9 +66,9 @@ function loadMd5File(options) {
   if (!options.md5SkipLoading) {
     try {
       ret = JSON.parse(fs.readFileSync(options.md5File));
-      info('fdf', 'File loaded   : %s', options.md5File);
+      log.info('fdf', 'File loaded   : %s', options.md5File);
     } catch (e) {
-      info('fdf', 'Can\'t load %s (%s)', options.md5File, e.message);
+      log.info('fdf', 'Can\'t load %s (%s)', options.md5File, e.message);
     }
   }
   return ret;
@@ -85,12 +77,11 @@ function loadMd5File(options) {
 function saveMd5File(md5List, options) {
   if (!options.md5SkipSaving) {
     fs.writeFile(options.md5File, JSON.stringify(md5List) /*, null, 2)*/, err => {
-      if (err) return console.error(err);
-      info('fdf', 'JSON (md5) saved at : %s', options.md5File);
+      if (err) return console.log.error(err);
+      log.info('fdf', 'JSON (md5) saved at : %s', options.md5File);
     });
   }
 }
-
 
 function removeOutdatedMd5Entries(files, md5List) {
   // remove outdated entries from md5List:
@@ -110,7 +101,7 @@ function createMissingMd5(files, md5List) {
     if (!options.silent && !options.silent && i > 0 && i % 1000 === 0) {
       const dt = (Date.now() - t2);
       const eta = Math.max(0, (dt * files.length / i - dt) / 1000).toFixed(0);
-      info('fdf', '%s %% (%d files) in %d millis (ETA: %s secs).', (100 * i / files.length).toFixed(1), i, dt, eta);
+      log.info('fdf', '%s %% (%d files) in %d millis (ETA: %s secs).', (100 * i / files.length).toFixed(1), i, dt, eta);
     }
     const p = files[i];
     if (!options.checkPattern || p.match(options.checkPattern)) {
@@ -120,7 +111,7 @@ function createMissingMd5(files, md5List) {
           item.md5 = md5File(p);
           md5List.push(item);
         } catch (e) {
-          error('fdf', '%d) %s (%s)', i, p, e.message);
+          log.error('fdf', '%d) %s (%s)', i, p, e.message);
         }
       }
     }
@@ -154,51 +145,85 @@ function findDuplicates(md5List) {
       dublicatMd5s.push(item1.md5);
     }
   }
-  info('fdf', 'Dublicates          : %d files in %d groups.', fileCount, ret.length);
+  log.info('fdf', 'Dublicates          : %d files in %d groups.', fileCount, ret.length);
   return ret;
 }
 
+function findSimilarly(files) {
+  console.info(files);
+  return []; // TODO findSimilarly
+}
 
-export function findDuplicateFiles(dir, options, callback) {
-
+function checkArguments(dir, options, callback){
   if (!dir) {
-    return error('fdf', 'Parameter dir is missing');
+    return log.error('fdf', 'Parameter dir is missing');
   }
 
   if (!options) options = {};
   options.pathes = Array.isArray(dir) ? dir : [dir]; // options.pathes is an array!
   options.callback = callback;
 
-  if (!options.md5File) {
-    options.md5File = path.join(options.pathes[0], '/', 'md5.json');
-  }
-
   if (!options.callback) {
     options.callback = defaultCallback;
   }
 
-  if (options.silent || options.quite) {
+  if (options.logLevel) {
+    log.level = options.logLevel;
+  } else if (options.silent || options.quite) {
     log.level = 'error';
   }
 
   // Check:
   for (let i; i < options.pathes.length; i++) {
     if (!isString(options.pathes[i])) {
-      return error('fdf', 'Parameter dir must be a string or an array of strings.');
+      return log.error('fdf', 'Parameter dir must be a string or an array of strings.');
     }
   }
+  return false;
+}
 
-  // Starting...
+function logArguments(options) {
+  log.info('fdf', 'Starting at   : %s', options.pathes);
+  log.info('fdf', 'Searching for : %s', options.checkPattern);
+  log.info('fdf', 'Start dirs    : %s', options.pathes);
+}
 
-  info('fdf', 'Starting at   : %s', options.pathes);
-  info('fdf', 'Searching for : %s', options.checkPattern);
-  info('fdf', 'Start dirs    : %s', options.pathes);
+export function findSimilarlyNamedFiles(dir, options, callback) {
+  const argProblem = checkArguments(dir, options, callback);
+  if (argProblem) return;
+
+  logArguments(options);
 
   // Scan directories recursive:
   const t1 = Date.now();
   const files = getAllFiles(options.pathes);
   const t2 = Date.now();
-  info('fdf',
+  log.info('fdf',
+    'Directory scan: %d entries (in %d start directories) in %d millis',
+    files.length, options.pathes.length, (t2 - t1));
+
+  // find duplicates by md5:
+  const ret = findSimilarly(files);
+
+  // call the caller:
+  options.callback(null, ret);
+}
+
+export function findDuplicateFiles(dir, options, callback) {
+  const argProblem = checkArguments(dir, options, callback);
+  if (argProblem) return;
+
+  if (!options.md5File) {
+    options.md5File = path.join(options.pathes[0], '/', 'md5.json');
+  }
+
+  logArguments(options);
+
+  // Scan directories recursive:
+  const t1 = Date.now();
+  const files = getAllFiles(options.pathes);
+  const t2 = Date.now();
+  log.info('fdf',
     'Directory scan: %d entries (in %d start directories) in %d millis',
     files.length, options.pathes.length, (t2 - t1));
 
@@ -213,7 +238,7 @@ export function findDuplicateFiles(dir, options, callback) {
 
   const t3 = Date.now();
   // Logging:
-  info('fdf', 'Creation of md5 list: %d entries in %d millis', md5List.length, (t3 - t2));
+  log.info('fdf', 'Creation of md5 list: %d entries in %d millis', md5List.length, (t3 - t2));
 
   // Write file/md5 list to file:
   saveMd5File(md5List, options);
