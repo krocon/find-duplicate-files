@@ -1,6 +1,6 @@
 {
   "name": "find-duplicate-files",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "type": "module",
   "description": "Find duplicate files (recursive) in given directories",
   "keywords": [
