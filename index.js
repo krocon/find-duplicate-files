@@ -149,12 +149,35 @@ function findDuplicates(md5List) {
   return ret;
 }
 
-function findSimilarly(files) {
-  console.info(files);
-  return []; // TODO findSimilarly
+function simplified(name) {
+  return name
+    .replace(/(\s|_)/g, '')
+    .replace(/\(\D+\)/g, '')
+    .replace(/\[\D+]/g, '');
 }
 
-function checkArguments(dir, options, callback){
+function findSimilarly(files) {
+  const tmp = {};
+  for (const file of files) {
+    let basename = path.basename(file);
+    const simple = simplified(basename);
+    if (tmp[simple]) {
+      tmp[simple].push(file);
+    } else {
+      tmp[simple] = [file];
+    }
+  }
+  const ret = [];
+  for (const key in tmp) {
+    if (tmp[key].length > 1) {
+      ret.push(tmp[key]);
+    }
+  }
+  console.info(ret);
+  return ret;
+}
+
+function checkArguments(dir, options, callback) {
   if (!dir) {
     return log.error('fdf', 'Parameter dir is missing');
   }
@@ -202,7 +225,7 @@ export function findSimilarlyNamedFiles(dir, options, callback) {
     'Directory scan: %d entries (in %d start directories) in %d millis',
     files.length, options.pathes.length, (t2 - t1));
 
-  // find duplicates by md5:
+  // find similarly named files:
   const ret = findSimilarly(files);
 
   // call the caller:
