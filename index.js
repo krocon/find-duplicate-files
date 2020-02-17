@@ -94,7 +94,7 @@ function removeOutdatedMd5Entries(files, md5List) {
   }
 }
 
-function createMissingMd5(files, md5List) {
+function createMissingMd5(files, md5List, options) {
   const t2 = Date.now();
   for (let i = 0; i < files.length; i++) {
     // Logging:
@@ -234,7 +234,7 @@ export function findDuplicateFiles(dir, options, callback) {
   if (md5List.length) removeOutdatedMd5Entries(files, md5List);
 
   // get md5 for each file in array 'files':
-  createMissingMd5(files, md5List);
+  createMissingMd5(files, md5List, options);
 
   const t3 = Date.now();
   // Logging:
